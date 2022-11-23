@@ -1,0 +1,245 @@
+{% extends "blog/base.html" %}
+{% block content %}
+    
+        <article class="media content-section">
+          <img class="rounded-circle article-img" src="{{ post.author.profile.image.url }}">
+          <div class="media-body">
+            <div class="article-metadata">
+              <a class="mr-2" href="#">{{ post.author }}</a>
+              <small class="text-muted">{{ post.date_posted|date:"F d, Y" }}</small>
+              {% if post.author == user %}
+                <div>
+                        <a class="btn btn-secondary btn-sm mt-1 mb-1" href="{% url 'post-update' post.id%}">
+                          {%if post.isQuestion%}
+                            Update Question
+                          {%else%}
+                            Update Post
+                          {%endif%}
+                        </a>
+                        <a class="btn btn-danger btn-sm mt-1 mb-1" href="{% url 'post-delete' post.id%}">
+                          {%if post.isQuestion%}
+                            Delete Question
+                          {%else%}
+                            Delete Post
+                          {%endif%}                        
+                        </a>
+                </div>
+              {% endif %}
+            </div>
+            <h2 class="article-title">{{ post.title }}</h2>
+            <h5>Topic : {{post.topic}}</h5>
+            {%if post.isQuestion%}
+              <b>Question:</b>
+            {%endif%}
+            {% for i in images %}
+            <img src={{i.image.url}} style="width:500px; height: 300px;">
+            {%endfor%}
+            <p class="article-content">{{ post.content }}</p>
+            {%if post.isQuestion%}
+              <div class="d-flex flex-row-reverse">
+                <a class="mr-2" href="{% url 'answers-list' post.id%}" >Answer</a>
+              </div>
+            {%endif%}            
+            <div>
+              Share on:
+              <a href="https://www.facebook.com/sharer/sharer.php?u={{request.get_host}}/post/{{post.id}}" target="_blank">
+                <img class="icons" src="/media/social_media_icons/facebook.png" alt="facebook">
+              </a>
+              <a href="https://twitter.com/intent/tweet?text=Check%20out%20this%20post%20{{request.get_host}}/post/{{post.id}}" target="_blank">
+                <img class="icons"  src="/media/social_media_icons/twitter.png" alt="twitter">
+              </a>
+              <a href="https://www.linkedin.com/shareArticle?mini=true&url={{request.get_host}}/post/{{post.id}}&title={{post.title}}" target="_blank">
+                <img class="icons"  src="/media/social_media_icons/linkedin.png" alt="linkedin">
+              </a>
+              <div class="d-flex flex-row-reverse">
+                <button type="button" class="btn btn-info" data-toggle="modal" data-target="#viewersList">Views({{post.viewed_users.all|length}})</button>
+                {% if post.isQuestion %}
+                  <a class="mr-2 btn btn-success" role="button" href="{% url 'answers-list' post.id%}" >Answer</a>
+                {% endif %}
+              </div>
+            </div>
+            <div class="modal fade" id="viewersList" role="dialog">
+              <div class="modal-dialog modal-dialog-centered modal-sm">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h4 class="modal=title float-left">Viewed by</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                  </div>
+                  <div class="modal-body">
+                    {% for user in post.viewed_users.all %}
+                      <div>
+                        <img class="rounded-circle article-img" src="{{ user.profile.image.url }}">
+                        <a class="mr-2" href="{% url 'user-posts' user.username %}">{{ user }}</a>
+                      </div>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+            </div> 
+          </div>
+        
+
+          <form action="/post/{{ post.pk }}/save/" method="POST">
+            {% csrf_token %}
+            {% if is_saved %}
+              <button type="submit" title="Remove from save" class="btn btn-info" name="post_save" value="{{ post.id }}"><i  class="fa fa-bookmark">   </i></button>
+             
+            {% else %}
+            <button type="submit" title="Save post" class="btn btn-outline-info"  name="post_save" value="{{ post.id }}"><i  class="fa fa-bookmark"> </i></button>
+              
+            {% endif %}
+          
+          </form>
+         </article> 
+        
+
+        <form action="/post/{{ post.pk }}/like/" method="POST">
+          {% csrf_token %}
+          {% if is_liked %}
+            <button type="submit" class="btn btn-danger" name="post_like" value="{{ post.id }}"><i  class="fa fa-thumbs-down"> {{ total_likes }} Like{{ total_likes|pluralize }}</i></button>
+           
+          {% else %}
+          <button type="submit" class="btn btn-primary"  name="post_like" value="{{ post.id }}"><i  class="fa fa-thumbs-up">   {{ total_likes }} Like{{ total_likes|pluralize }}</i></button>
+            
+          {% endif %}
+        
+        </form>
+        
+        
+
+        {% if post.isQuestion %}
+        {% else %}
+
+        
+            <div id="respond" class="comment-respond">
+              <h3 id="reply-title" class="comment-reply-title">Leave a Comment </h3>	
+              <form action="/post/{{ post.pk }}/" method="post" id="commentform" class="comment-form">
+                  {% csrf_token %}
+                <p class="comment-notes">Your email address will not be published. </p>
+                <p class="comment-form-comment">
+                  <label for="comment">Comment :</label>
+                  <br>
+                  {{ form.body }}
+                  
+                </p>
+                <p class="comment-form-author">
+                  <label for="author">Name <span class="required">*</span>
+                  </label>
+                  {{ form.Name }}
+                 
+                </p>
+                <p class="comment-form-email">
+                  <label for="email">Email <span class="required">*</span>
+                  </label>
+                  {{ form.email }}
+                  
+                </p>
+                <p class="form-submit">
+                 
+                  <button type="submit" class="btn btn-primary">Submit</button>
+                </p>
+              </form>
+            </div>
+        
+        
+        
+        
+          <h4>Comments</h4>
+          {% for comment in comments %}
+          <div  class="border rounded p-3 mb-1" style="background-color: #f6f5f1;">
+              <div class="container">
+                <div class="row">
+                  <div class="col-2 col-md-1 p-0 align-self-center">
+                    <img class="align-self-center rounded-circle img-fluid w-100" src="https://www.gravatar.com/avatar/9a07a6b85d87764d65c3af0e37accbbb?s=500&amp;d=mp">
+                  </div>
+                  <div class="col pr-0 d-flex align-items-center">
+                    <p><strong>{{ comment.Name }}</strong><span class="text-muted"> on <a class="text-muted" href="#comment-cc6bd7a0-6680-4b5d-8f99-8a19ffbcafe3">{{ comment.created_on }}</a></span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div class="my-3">
+                <p>{{ comment.body }}</p>
+                 
+              </div>
+              
+            </div>
+            
+             
+             {% if comment.replies.all %}
+             <div style ="float: right; "> 
+              <button type="button"  name="button" class="reply-btn btn btn-outline-dark btn-sm ml-2">Replies</button>
+             </div>
+             {% endif %}
+             <div style ="float: right; "> 
+              <button type="button"  name="button" class="add-reply-btn btn btn-outline-dark btn-sm ml-2">Add Reply</button>
+             </div> 
+             <hr>
+            
+            
+             <div class="replied-comments" style="display: none;"> 
+              <div style="margin-left: 3em;">  
+                
+                {% for reply in comment.replies.all %}
+                <div  class="border rounded p-3 mb-1" style="background-color: #f6f5f1;">
+                  <div class="container">
+                    <div class="row">
+                      <div class="col-2 col-md-1 p-0 align-self-center">
+                        <img class="align-self-center rounded-circle img-fluid w-100" src="https://www.gravatar.com/avatar/9a07a6b85d87764d65c3af0e37accbbb?s=500&amp;d=mp">
+                      </div>
+                      <div class="col pr-0 d-flex align-items-center">
+                        <p><strong>{{ reply.Name }}</strong><span class="text-muted"> on <a class="text-muted" href="#comment-cc6bd7a0-6680-4b5d-8f99-8a19ffbcafe3">{{ comment.created_on }}</a></span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="my-3">
+                    <p>{{ reply.body }}</p>
+                  </div>
+                </div>
+                <hr>
+
+                {% endfor %}
+                
+                
+              </div>
+            </div>
+
+          <div class="reply-form" style="display: none;">
+            <div style="margin-left: 3em;">
+              <div id="respond" class="comment-respond" >
+              <h3 id="reply-title" class="comment-reply-title">Leave a Comment </h3>	
+              <form action="/post/{{ post.pk }}/" method="post" id="commentform" class="comment-form">
+                  {% csrf_token %}
+                <p class="comment-notes">Your email address will not be published. </p>
+                <p class="comment-form-comment">
+                  <label for="comment">Comment :</label>
+                  <br>
+                  {{ form.body }}
+                  
+                </p>
+                <p class="comment-form-author">
+                  <label for="author">Name <span class="required">*</span>
+                  </label>
+                  {{ form.Name }}
+                 
+                </p>
+                <p class="comment-form-email">
+                  <label for="email">Email <span class="required">*</span>
+                  </label>
+                  {{ form.email }}
+                  
+                </p>
+                <p class="form-submit">
+                  <input type="hidden" name="comment_id" value="{{ comment.id }}">
+                  <button type="submit" class="btn btn-primary">Submit</button>
+                </p>
+              </form>
+            </div>
+            </div>
+        </div>
+           <br>
+          {% endfor %}
+    {% endif %}
+         
+{% endblock content %}
